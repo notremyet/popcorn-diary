@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Popcorn Diary</title>
+<meta name="description" content="สมุดบันทึกหนังและซีรีส์ที่ดู">
+<meta name="theme-color" content="#fff6f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1e1520" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Popcorn">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- shown when config.js still has placeholder values -->
+<section class="setup" id="setupView" hidden>
+  <h2>ยังไม่ได้ตั้งค่า Supabase</h2>
+  <p>เปิดไฟล์ <code>config.js</code> แล้วใส่ <code>SUPABASE_URL</code> กับ <code>SUPABASE_ANON_KEY</code> ของโปรเจกต์ Supabase ของคุณ ดูขั้นตอนทั้งหมดใน <code>README.md</code></p>
+</section>
+
+<!-- sign in -->
+<section class="auth" id="authView" hidden>
+  <h2>Popcorn Diary</h2>
+  <p>เข้าสู่ระบบเพื่อเปิดสมุดบันทึกหนังของคุณ ใช้บัญชีเดียวกันได้ทั้งบน Mac และมือถือ</p>
+  <form id="authForm" class="dlg" style="padding:0" novalidate>
+    <div class="field"><label for="aEmail">อีเมล</label><input id="aEmail" type="email" autocomplete="email" required></div>
+    <div class="field"><label for="aPass">รหัสผ่าน</label><input id="aPass" type="password" autocomplete="current-password" minlength="6" required></div>
+    <p class="err" id="authErr" hidden></p>
+    <p class="ok" id="authOk" hidden></p>
+    <div class="acts">
+      <button class="btn btn-pink" type="submit" id="signInBtn">เข้าสู่ระบบ</button>
+      <button class="btn btn-ghost" type="button" id="signUpBtn">สมัครบัญชีใหม่</button>
+    </div>
+  </form>
+</section>
+
+<!-- app -->
+<div class="wrap" id="appView" hidden>
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M6 9h12l-1.6 11.2a1 1 0 0 1-1 .8H8.6a1 1 0 0 1-1-.8L6 9Z" fill="#fff"/><path d="M9.5 9l.6 12M14.5 9l-.6 12" stroke="#ff8fb8" stroke-width="1.6"/><circle cx="8" cy="7" r="2.4" fill="#fff"/><circle cx="12" cy="5.4" r="2.6" fill="#fff"/><circle cx="16" cy="7" r="2.4" fill="#fff"/></svg>
+      </div>
+      <div>
+        <h1>Popcorn <span>Diary</span></h1>
+        <p>สมุดบันทึกหนังและซีรีส์ที่ดู</p>
+      </div>
+    </div>
+    <div class="acct">
+      <small id="who"></small>
+      <button class="btn btn-ghost" type="button" id="signOutBtn">ออกจากระบบ</button>
+      <button class="btn btn-pink" id="addBtn" type="button">＋ บันทึกเรื่องใหม่</button>
+    </div>
+  </header>
+
+  <section class="stats" id="stats" aria-label="สรุป"></section>
+  <div class="note" id="note" hidden></div>
+
+  <div class="tools">
+    <div class="seg" id="fType" role="group" aria-label="ประเภท">
+      <button type="button" data-v="all" aria-pressed="true">ทั้งหมด</button>
+      <button type="button" data-v="movie" aria-pressed="false">หนัง</button>
+      <button type="button" data-v="series" aria-pressed="false">ซีรีส์</button>
+    </div>
+    <div class="seg" id="fWhere" role="group" aria-label="ดูจากที่ไหน">
+      <button type="button" data-v="all" aria-pressed="true">ทุกที่</button>
+      <button type="button" data-v="online" aria-pressed="false">ออนไลน์</button>
+      <button type="button" data-v="cinema" aria-pressed="false">โรงหนัง</button>
+    </div>
+    <label class="search"><span aria-hidden="true">⌕</span><input id="q" type="search" placeholder="ค้นหาชื่อเรื่อง แพลตฟอร์ม หรือรีวิว"></label>
+    <select id="sort" aria-label="เรียงตาม">
+      <option value="recent">ดูล่าสุด</option>
+      <option value="rating">คะแนนสูงสุด</option>
+      <option value="title">ชื่อเรื่อง ก–ฮ</option>
+    </select>
+  </div>
+
+  <main id="list"></main>
+</div>
+
+<!-- add / edit -->
+<dialog id="formDlg">
+  <form class="dlg" id="form" novalidate>
+    <div class="dlg-head"><h2 id="formTitle">บันทึกเรื่องใหม่</h2><button class="x" type="button" data-close aria-label="ปิด">×</button></div>
+    <div class="field"><label for="fTitle">ชื่อเรื่อง</label><input id="fTitle" required placeholder="เช่น Your Name, หลานม่า"></div>
+    <div class="field"><span class="lbl">ประเภท</span>
+      <div class="pick" id="pType"><button type="button" data-v="movie" aria-pressed="true">หนัง</button><button type="button" data-v="series" aria-pressed="false">ซีรีส์</button></div>
+    </div>
+    <div class="field" id="epWrap" hidden><label for="fEp">ซีซั่น / ตอน</label><input id="fEp" placeholder="เช่น SS2 EP1–8 หรือ ดูจบทั้งซีซั่น"></div>
+    <div class="field"><span class="lbl">โปสเตอร์</span>
+      <div class="poster-in">
+        <div class="prev" id="pPrev">ยังไม่มีรูป</div>
+        <div class="acts">
+          <label class="btn btn-ghost" for="fPoster" style="cursor:pointer">เลือกรูป</label>
+          <input id="fPoster" type="file" accept="image/*" hidden>
+          <button class="btn btn-ghost" type="button" id="pRemove" hidden>ลบรูป</button>
+          <small style="color:var(--muted)">รูปจะถูกย่อให้พอดีอัตโนมัติ</small>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="fDate">วันที่ดู</label><input id="fDate" type="date"></div>
+      <div class="field"><label for="fTime">เวลา</label><input id="fTime" type="time"></div>
+    </div>
+    <div class="field"><span class="lbl">ดูจากที่ไหน</span>
+      <div class="pick" id="pWhere"><button type="button" data-v="online" aria-pressed="true">แพลตฟอร์มออนไลน์</button><button type="button" data-v="cinema" aria-pressed="false">โรงหนัง</button></div>
+    </div>
+    <div class="field" id="onWrap"><label for="fPlat">แพลตฟอร์ม</label><select id="fPlat"></select></div>
+    <div class="field" id="platOtherWrap" hidden><label for="fPlatOther">ชื่อแพลตฟอร์ม</label><input id="fPlatOther"></div>
+    <div class="row" id="cinWrap" hidden>
+      <div class="field"><label for="fCinema">โรงหนัง / สาขา</label><input id="fCinema" list="cinemas" placeholder="เช่น SF World Cinema"></div>
+      <div class="field"><label for="fSeat">ที่นั่ง (ถ้ามี)</label><input id="fSeat" placeholder="เช่น G12"></div>
+    </div>
+    <datalist id="cinemas"></datalist>
+    <div class="field"><span class="lbl">คะแนน</span><div class="rate" id="rate"></div></div>
+    <div class="field"><label for="fReview">รีวิว</label><textarea id="fReview" placeholder="ชอบตรงไหน ไม่ชอบตรงไหน ฉากที่จำได้..."></textarea></div>
+    <p class="err" id="formErr" hidden></p>
+    <div class="dlg-foot"><div class="r"><button class="btn btn-ghost" type="button" data-close>ยกเลิก</button><button class="btn btn-pink" type="submit" id="saveBtn">บันทึก</button></div></div>
+  </form>
+</dialog>
+
+<dialog id="viewDlg"><div id="viewBody"></div></dialog>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

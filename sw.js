@@ -1,9 +1,9 @@
 // Service worker: เก็บไฟล์หน้าแอปไว้ให้เปิดได้เร็ว (ข้อมูลหนังยังโหลดจาก Supabase ทุกครั้ง)
 // เปลี่ยนเลขเวอร์ชันทุกครั้งที่แก้ไฟล์ เพื่อให้มือถือโหลดของใหม่
-const CACHE = "popcorn-v1";
+const CACHE = "popcorn-v2";
 const SHELL = [
   "./", "index.html", "style.css", "app.js", "config.js", "manifest.webmanifest",
-  "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png", "icons/favicon.png",
+  "icon-192.png", "icon-512.png", "apple-touch-icon.png", "favicon.png",
 ];
 
 self.addEventListener("install", (e) => {
